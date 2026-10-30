@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, X, Check } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check, TrendingUp, Users } from 'lucide-react';
 
 interface Motorista {
   id: string;
@@ -20,7 +20,7 @@ export function Motoristas() {
   const [cnh, setCnh] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Máscaras de Formatação
+  // Formatação em tempo real e retroativa na tabela
   function formatarCPF(v: string) {
     const nums = v.replace(/\D/g, '').slice(0, 11);
     return nums
@@ -65,8 +65,8 @@ export function Motoristas() {
   function handleStartEdit(m: Motorista) {
     setEditingId(m.id);
     setNome(m.nome);
-    setCpf(m.cpf);
-    setTelefone(m.telefone);
+    setCpf(formatarCPF(m.cpf));
+    setTelefone(formatarTelefone(m.telefone));
     setCnh(m.cnh);
   }
 
@@ -100,7 +100,12 @@ export function Motoristas() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ nome, cpf, telefone, cnh })
+        body: JSON.stringify({
+          nome,
+          cpf: formatarCPF(cpf),
+          telefone: formatarTelefone(telefone),
+          cnh
+        })
       });
 
       if (!response.ok) throw new Error('Erro ao salvar motorista.');
@@ -141,6 +146,25 @@ export function Motoristas() {
         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>Cadastre, edite ou remova os motoristas da sua frota</p>
       </div>
 
+      {/* Card da Cotação / Indicador de Produtividade da Equipe */}
+      <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ backgroundColor: '#10b98120', padding: '12px', borderRadius: '10px', color: '#34d399' }}>
+            <Users size={28} />
+          </div>
+          <div>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block' }}>Índice de Disponibilidade da Equipe</span>
+            <strong style={{ fontSize: '1.3rem', color: '#fff' }}>100% Ativos</strong>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#0f172a', padding: '8px 14px', borderRadius: '8px', border: '1px solid #334155' }}>
+          <TrendingUp size={20} color="#34d399" />
+          <span style={{ color: '#34d399', fontWeight: 'bold', fontSize: '0.9rem' }}>+ 2.5% produtividade</span>
+        </div>
+      </div>
+
+      {/* Formulário de Cadastro */}
       <form onSubmit={handleSubmit} style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'end' }}>
         <div>
           <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>Nome Completo</label>
@@ -176,6 +200,7 @@ export function Motoristas() {
         </div>
       </form>
 
+      {/* Tabela de Motoristas */}
       <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', border: '1px dashed #334155', overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Carregando motoristas...</div>
@@ -196,8 +221,8 @@ export function Motoristas() {
               {motoristas.map(m => (
                 <tr key={m.id} style={{ borderBottom: '1px dashed #334155' }}>
                   <td style={{ padding: '14px 16px', fontWeight: 'bold', color: '#60a5fa' }}>{m.nome}</td>
-                  <td style={{ padding: '14px 16px' }}>{m.cpf}</td>
-                  <td style={{ padding: '14px 16px' }}>{m.telefone}</td>
+                  <td style={{ padding: '14px 16px' }}>{formatarCPF(m.cpf)}</td>
+                  <td style={{ padding: '14px 16px' }}>{formatarTelefone(m.telefone)}</td>
                   <td style={{ padding: '14px 16px' }}>{m.cnh}</td>
                   <td style={{ padding: '14px 16px', display: 'flex', gap: '8px' }}>
                     <button onClick={() => handleStartEdit(m)} style={{ backgroundColor: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer' }} title="Editar">
