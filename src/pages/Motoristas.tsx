@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
+import { Plus, Edit2, Trash2, Eraser, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface Motorista {
   id?: string;
@@ -13,7 +14,9 @@ export function Motoristas() {
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [cnh, setCnh] = useState('');
+  const [idEmEdicao, setIdEmEdicao] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
 
   async function carregarMotoristas() {
     try {
@@ -28,9 +31,29 @@ export function Motoristas() {
     carregarMotoristas();
   }, []);
 
-  async function handleCadastrar(e: any) {
+  function handleLimpar() {
+    setNome('');
+    setCpf('');
+    setCnh('');
+    setIdEmEdicao(null);
+    setErro('');
+    setSucesso('');
+  }
+
+  function handleIniciarEdicao(m: Motorista) {
+    if (!m.id) return;
+    setIdEmEdicao(m.id);
+    setNome(m.nome);
+    setCpf(m.cpf);
+    setCnh(m.cnh);
+    setErro('');
+    setSucesso('');
+  }
+
+  async function handleSalvar(e: any) {
     e.preventDefault();
     setErro('');
+    setSucesso('');
 
     if (!nome || !cpf || !cnh) {
       setErro('Preencha todos os campos.');
@@ -38,18 +61,33 @@ export function Motoristas() {
     }
 
     try {
-      await api.post('/motoristas', {
-        nome,
-        cpf,
-        cnh,
-      });
+      const dados = { nome, cpf, cnh };
 
-      setNome('');
-      setCpf('');
-      setCnh('');
+      if (idEmEdicao) {
+        await api.put(`/motoristas/${idEmEdicao}`, dados);
+        setSucesso('Motorista atualizado com sucesso!');
+      } else {
+        await api.post('/motoristas', dados);
+        setSucesso('Motorista cadastrado com sucesso!');
+      }
+
+      handleLimpar();
       carregarMotoristas();
     } catch (err: any) {
-      setErro(err.response?.data?.erro || 'Erro ao cadastrar motorista.');
+      setErro(err.response?.data?.erro || 'Erro ao salvar motorista.');
+    }
+  }
+
+  async function handleExcluir(id?: string) {
+    if (!id) return;
+    if (confirm('Deseja realmente eliminar este motorista?')) {
+      try {
+        await api.delete(`/motoristas/${id}`);
+        setSucesso('Motorista removido com sucesso!');
+        carregarMotoristas();
+      } catch (err) {
+        console.error('Erro ao eliminar motorista:', err);
+      }
     }
   }
 
@@ -59,12 +97,24 @@ export function Motoristas() {
         <h1 style={{ margin: 0, color: '#0f172a', fontSize: '2rem' }}>Gestão de Motoristas</h1>
       </header>
 
+      {/* Formulário */}
       <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '30px' }}>
-        <h2 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', color: '#1e293b' }}>Cadastrar Novo Motorista</h2>
+        <h2 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', color: '#1e293b' }}>
+          {idEmEdicao ? 'Editar Motorista' : 'Cadastrar Novo Motorista'}
+        </h2>
         
-        {erro && <p style={{ color: '#ef4444', marginBottom: '15px' }}>{erro}</p>}
+        {erro && (
+          <p style={{ color: '#ef4444', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertCircle size={18} /> {erro}
+          </p>
+        )}
+        {sucesso && (
+          <p style={{ color: '#16a34a', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={18} /> {sucesso}
+          </p>
+        )}
 
-        <form onSubmit={handleCadastrar} style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <form onSubmit={handleSalvar} style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: 1, minWidth: '180px' }}>
             <label style={{ display: 'block', fontSize: '0.875rem', color: '#64748b', marginBottom: '5px' }}>Nome Completo</label>
             <input 
@@ -95,17 +145,31 @@ export function Motoristas() {
               style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
             />
           </div>
-          <button 
-            type="submit" 
-            style={{ padding: '11px 24px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-          >
-            Cadastrar
-          </button>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              type="submit" 
+              style={{ padding: '11px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              {idEmEdicao ? <Edit2 size={18} /> : <Plus size={18} />}
+              {idEmEdicao ? 'Atualizar' : 'Cadastrar'}
+            </button>
+
+            <button 
+              type="button" 
+              onClick={handleLimpar} 
+              style={{ padding: '11px 16px', backgroundColor: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Eraser size={18} />
+              Limpar
+            </button>
+          </div>
         </form>
       </div>
 
+      {/* Tabela */}
       <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <h2 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', color: '#1e293b' }}>Motoristas Registados</h2>
+        <h2 style={{ margin: '0 0 20px 0', fontSize: '1.25rem', color: '#1e293b' }}>Motoristas Registrados</h2>
         
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
@@ -113,12 +177,13 @@ export function Motoristas() {
               <th style={{ padding: '12px' }}>Nome</th>
               <th style={{ padding: '12px' }}>CPF</th>
               <th style={{ padding: '12px' }}>CNH</th>
+              <th style={{ padding: '12px', textAlign: 'right' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {motoristas.length === 0 ? (
               <tr>
-                <td colSpan={3} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>
                   Nenhum motorista cadastrado.
                 </td>
               </tr>
@@ -128,6 +193,22 @@ export function Motoristas() {
                   <td style={{ padding: '12px', fontWeight: 'bold', color: '#0f172a' }}>{m.nome}</td>
                   <td style={{ padding: '12px', color: '#334155' }}>{m.cpf}</td>
                   <td style={{ padding: '12px', color: '#334155' }}>{m.cnh}</td>
+                  <td style={{ padding: '12px', textAlign: 'right', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button 
+                      onClick={() => handleIniciarEdicao(m)} 
+                      style={{ padding: '6px 12px', backgroundColor: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Edit2 size={14} />
+                      Editar
+                    </button>
+                    <button 
+                      onClick={() => handleExcluir(m.id)} 
+                      style={{ padding: '6px 12px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Trash2 size={14} />
+                      Excluir
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
