@@ -1,13 +1,19 @@
-import { Outlet } from 'react-router-dom';
-import { Sidebar } from './Sidebar';
+import React from 'react';
+import Sidebar from './Sidebar';
 
-export function AppLayout() {
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#f1f5f9', fontFamily: 'sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', width: '100%' }}>
       <Sidebar />
-      <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
-        <Outlet />
+      <main style={{ flex: 1, padding: '32px', overflowX: 'hidden', minWidth: 0 }}>
+        {children}
       </main>
     </div>
   );
 }
+
+export default AppLayout;

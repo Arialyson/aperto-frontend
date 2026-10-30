@@ -1,169 +1,187 @@
-import { useState, useEffect } from 'react';
-import { Truck, DollarSign, Users, Package, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-
-interface MetricCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  description: string;
-}
-
-function MetricCard({ title, value, icon, color, description }: MetricCardProps) {
-  return (
-    <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#94a3b8', fontSize: '0.875rem', fontWeight: 500 }}>{title}</span>
-        <div style={{ padding: '8px', borderRadius: '8px', backgroundColor: `${color}20`, color: color }}>
-          {icon}
-        </div>
-      </div>
-      <div>
-        <h2 style={{ color: '#f8fafc', fontSize: '1.75rem', fontWeight: 'bold', margin: 0 }}>{value}</h2>
-        <p style={{ color: '#64748b', fontSize: '0.75rem', margin: '4px 0 0 0' }}>{description}</p>
-      </div>
-    </div>
-  );
-}
+import React, { useEffect, useState } from 'react';
+import { DollarSign, Package, Truck, Users, TrendingUp, PieChart } from 'lucide-react';
 
 export function Dashboard() {
-  const [loading, setLoading] = useState(true);
-
-  // Dados mockados para exibição visual imediata dos gráficos
-  const faturamentoMensal = [
-    { mes: 'Jan', valor: 12500 },
-    { mes: 'Fev', valor: 18200 },
-    { mes: 'Mar', valor: 15400 },
-    { mes: 'Abr', valor: 22100 },
-    { mes: 'Mai', valor: 28900 },
-    { mes: 'Jun', valor: 24300 },
-  ];
-
-  const statusFretes = [
-    { name: 'Entregues', value: 45, color: '#22c55e' },
-    { name: 'Em Trânsito', value: 18, color: '#3b82f6' },
-    { name: 'Pendentes', value: 12, color: '#eab308' },
-    { name: 'Cancelados', value: 3, color: '#ef4444' },
-  ];
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Simula carregamento inicial
-    const timer = setTimeout(() => setLoading(false), 300);
+    // Ativa a animação após a montagem do componente
+    const timer = setTimeout(() => setLoaded(true), 150);
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ color: '#f8fafc', padding: '20px' }}>
-        <p>A carregar indicadores do Dashboard...</p>
-      </div>
-    );
-  }
+  const kpis = [
+    { titulo: 'Faturamento do Mês', valor: 'R$ 28.900', subtexto: '-18% em relação ao mês anterior', icone: DollarSign, cor: '#22c55e' },
+    { titulo: 'Fretes Ativos', valor: '30', subtexto: '18 em trânsito / 12 pendentes', icone: Package, cor: '#3b82f6' },
+    { titulo: 'Veículos em Rota', valor: '14 / 20', subtexto: '70% da frota operacional', icone: Truck, cor: '#a855f7' },
+    { titulo: 'Motoristas Ativos', valor: '16', subtexto: '2 motoristas disponíveis', icone: Users, cor: '#eab308' },
+  ];
+
+  const dadosFaturamento = [12000, 15000, 18000, 14000, 22000, 28900];
+
+  // Configuração das fatias do gráfico de pizza/rosca (SVG)
+  const raio = 50;
+  const circunferencia = 2 * Math.PI * raio; // ~314.16
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      
+      {/* Cabeçalho */}
       <div>
-        <h1 style={{ color: '#f8fafc', margin: 0, fontSize: '1.75rem', fontWeight: 'bold' }}>Dashboard Visão Geral</h1>
-        <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Acompanhe os indicadores operacionais e financeiros da TáPerto.</p>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#f8fafc', margin: 0 }}>Visão Geral</h1>
+        <p style={{ color: '#94a3b8', marginTop: '4px', fontSize: '0.95rem' }}>
+          Acompanhe os principais indicadores operacionais e financeiros da TáPerto.
+        </p>
       </div>
 
-      {/* Grid de Cards de Métricas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <MetricCard 
-          title="Faturamento do Mês" 
-          value="R$ 28.900" 
-          icon={<DollarSign size={22} />} 
-          color="#22c55e" 
-          description="+18% em relação ao mês anterior" 
-        />
-        <MetricCard 
-          title="Fretes Ativos" 
-          value="30" 
-          icon={<Package size={22} />} 
-          color="#3b82f6" 
-          description="18 em trânsito / 12 pendentes" 
-        />
-        <MetricCard 
-          title="Veículos em Rota" 
-          value="14 / 20" 
-          icon={<Truck size={22} />} 
-          color="#a855f7" 
-          description="70% da frota operacional" 
-        />
-        <MetricCard 
-          title="Motoristas Ativos" 
-          value="16" 
-          icon={<Users size={22} />} 
-          color="#eab308" 
-          description="2 motoristas disponíveis" 
-        />
+      {/* Cartões KPI */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+        {kpis.map((kpi, idx) => {
+          const Icone = kpi.icone;
+          return (
+            <div 
+              key={idx} 
+              style={{ 
+                backgroundColor: '#1e293b', 
+                padding: '20px', 
+                borderRadius: '12px', 
+                border: '1px solid #334155',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <span style={{ fontSize: '0.875rem', color: '#94a3b8', fontWeight: '500' }}>{kpi.titulo}</span>
+                <div style={{ backgroundColor: `${kpi.cor}20`, padding: '8px', borderRadius: '8px' }}>
+                  <Icone size={20} color={kpi.cor} />
+                </div>
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>{kpi.valor}</h2>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', display: 'block' }}>{kpi.subtexto}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Seção de Gráficos */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px' }}>
+      {/* Gráficos */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
         
-        {/* Gráfico de Barras - Faturamento */}
-        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '10px', border: '1px solid #334155' }}>
+        {/* Gráfico 1 - Barras Animadas */}
+        <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            <TrendingUp color="#3b82f6" size={20} />
-            <h2 style={{ color: '#f8fafc', fontSize: '1.1rem', margin: 0 }}>Evolução do Faturamento (R$)</h2>
-          </div>
-          <div style={{ width: '100%', height: '280px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={faturamentoMensal}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="mes" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }}
-                  formatter={(value: any) => [`R$ ${value}`, 'Faturamento']}
-                />
-                <Bar dataKey="valor" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Gráfico de Rosca - Distribution dos Fretes */}
-        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '10px', border: '1px solid #334155' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            <Clock color="#eab308" size={20} />
-            <h2 style={{ color: '#f8fafc', fontSize: '1.1rem', margin: 0 }}>Status dos Fretes</h2>
-          </div>
-          <div style={{ width: '100%', height: '220px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusFretes}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {statusFretes.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#f8fafc' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <TrendingUp size={20} color="#3b82f6" />
+            <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: '600', color: '#f8fafc' }}>Evolução do Faturamento (R$)</h3>
           </div>
           
-          {/* Legenda do Gráfico */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginTop: '10px' }}>
-            {statusFretes.map((item) => (
-              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: item.color }} />
-                <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>{item.name} ({item.value})</span>
+          <div style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '16px', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+            {dadosFaturamento.map((v, i) => {
+              const alturaPercentual = (v / 30000) * 100;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: '8px' }}>
+                  <div 
+                    style={{ 
+                      width: '100%', 
+                      maxWidth: '40px',
+                      height: loaded ? `${alturaPercentual}%` : '0%', 
+                      backgroundColor: '#2563eb', 
+                      borderRadius: '6px 6px 0 0',
+                      transition: 'height 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                    }} 
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Mês {i + 1}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Gráfico 2 - Pizza / Rosca SVG Animado */}
+        <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px solid #334155' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+            <PieChart size={20} color="#eab308" />
+            <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: '600', color: '#f8fafc' }}>Status dos Fretes</h3>
+          </div>
+
+          <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px' }}>
+            
+            <div style={{ position: 'relative', width: '140px', height: '140px' }}>
+              <svg width="140" height="140" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+                {/* Arco 1: Em Trânsito (60%) */}
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={raio}
+                  fill="transparent"
+                  stroke="#2563eb"
+                  strokeWidth="16"
+                  strokeDasharray={circunferencia}
+                  strokeDashoffset={loaded ? circunferencia * 0.4 : circunferencia}
+                  style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                />
+
+                {/* Arco 2: Pendente (25%) */}
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={raio}
+                  fill="transparent"
+                  stroke="#eab308"
+                  strokeWidth="16"
+                  strokeDasharray={circunferencia}
+                  strokeDashoffset={loaded ? circunferencia * 0.75 : circunferencia}
+                  style={{ 
+                    transform: `rotate(${360 * 0.6}deg)`, 
+                    transformOrigin: '60px 60px',
+                    transition: 'stroke-dashoffset 1s ease-out 0.2s' 
+                  }}
+                />
+
+                {/* Arco 3: Entregue (15%) */}
+                <circle
+                  cx="60"
+                  cy="60"
+                  r={raio}
+                  fill="transparent"
+                  stroke="#22c55e"
+                  strokeWidth="16"
+                  strokeDasharray={circunferencia}
+                  strokeDashoffset={loaded ? circunferencia * 0.85 : circunferencia}
+                  style={{ 
+                    transform: `rotate(${360 * 0.85}deg)`, 
+                    transformOrigin: '60px 60px',
+                    transition: 'stroke-dashoffset 1s ease-out 0.4s' 
+                  }}
+                />
+              </svg>
+            </div>
+
+            {/* Legenda de Status */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#2563eb' }} />
+                <span style={{ color: '#94a3b8' }}>Em Trânsito (60%)</span>
               </div>
-            ))}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#eab308' }} />
+                <span style={{ color: '#94a3b8' }}>Pendente (25%)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#22c55e' }} />
+                <span style={{ color: '#94a3b8' }}>Entregue (15%)</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
       </div>
+
     </div>
   );
 }
+
+export default Dashboard;
