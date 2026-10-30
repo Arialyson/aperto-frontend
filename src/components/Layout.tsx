@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Truck, Users, LogOut, Package } from 'lucide-react';
+import { LayoutDashboard, Truck, Users, LogOut, Package, Settings } from 'lucide-react';
 
 export function Layout() {
   const location = useLocation();
@@ -7,6 +7,7 @@ export function Layout() {
 
   function handleLogout() {
     localStorage.removeItem('@taperto:authenticated');
+    localStorage.removeItem('@taperto:currentUser');
     localStorage.removeItem('@taperto:token');
     navigate('/login');
   }
@@ -16,6 +17,7 @@ export function Layout() {
     { label: 'Fretes', path: '/fretes', icon: Package },
     { label: 'Motoristas', path: '/motoristas', icon: Users },
     { label: 'Veículos', path: '/veiculos', icon: Truck },
+    { label: 'Configurações', path: '/configuracoes', icon: Settings },
   ];
 
   return (
@@ -86,7 +88,7 @@ export function Layout() {
         </button>
       </aside>
 
-      {/* Conteúdo Principal (Renderiza a rota filha correspondente) */}
+      {/* Conteúdo Principal */}
       <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
         <Outlet />
       </main>

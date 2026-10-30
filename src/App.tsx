@@ -6,6 +6,7 @@ import { Fretes } from './pages/Fretes';
 import { Motoristas } from './pages/Motoristas';
 import { Veiculos } from './pages/Veiculos';
 import { RastreioPublico } from './pages/RastreioPublico';
+import { Configuracoes } from './pages/Configuracoes';
 import { Layout } from './components/Layout';
 import { AuthGuard } from './components/AuthGuard';
 
@@ -24,6 +25,7 @@ export function App() {
           <Route path="/fretes" element={<Fretes />} />
           <Route path="/motoristas" element={<Motoristas />} />
           <Route path="/veiculos" element={<Veiculos />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
         </Route>
 
         {/* Redirecionamento Padrão */}
