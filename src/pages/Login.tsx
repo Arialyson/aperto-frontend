@@ -1,88 +1,93 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Truck, Lock, User } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Truck, Lock, Mail } from 'lucide-react';
 
 export function Login() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [erro, setErro] = useState('');
+  const [senha, setSenha] = useState('');
   const navigate = useNavigate();
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setErro('');
 
-    // Validação simples para protótipo
-    if (email === 'admin@taperto.com' && password === '123456') {
-      sessionStorage.setItem('@taperto:token', 'token-demo-12345');
-      navigate('/');
-    } else if (email && password) {
-      // Aceita qualquer login de teste
-      sessionStorage.setItem('@taperto:token', 'token-demo-12345');
-      navigate('/');
+    // Validação simulada de login
+    if (email && senha) {
+      // Define as chaves necessárias no localStorage que o AuthGuard valida
+      localStorage.setItem('@taperto:authenticated', 'true');
+      localStorage.setItem('@taperto:token', 'simulated-jwt-token');
+      
+      // Redireciona para o Dashboard protegido
+      navigate('/dashboard');
     } else {
-      setErro('Por favor, preencha todos os campos.');
+      alert('Por favor, preencha o e-mail e a senha.');
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-      <div style={{ width: '100%', maxWidth: '400px', backgroundColor: '#1e293b', padding: '32px', borderRadius: '16px', border: '1px solid #334155' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+      <div style={{ width: '100%', maxWidth: '400px', padding: '32px', backgroundColor: '#1e293b', borderRadius: '12px', border: '1px solid #334155' }}>
         
-        {/* Header/Logo */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '28px' }}>
-          <div style={{ backgroundColor: '#2563eb', padding: '12px', borderRadius: '12px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Truck color="white" size={32} />
+        {/* Cabeçalho do Form "TáPerto" */}
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <div style={{ display: 'inline-flex', padding: '12px', backgroundColor: '#2563eb', borderRadius: '12px', marginBottom: '12px' }}>
+            <Truck size={32} color="white" />
           </div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', margin: 0 }}>TáPerto Logística</h1>
-          <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>Aceda à plataforma de gestão</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>Acessar o TáPerto</h2>
+          <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>Gestão Logística e Fretes</p>
         </div>
 
-        {erro && (
-          <div style={{ backgroundColor: '#ef444420', border: '1px solid #ef4444', color: '#ef4444', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px', textAlign: 'center' }}>
-            {erro}
-          </div>
-        )}
-
-        {/* Formulário */}
+        {/* Formulário de Login */}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>E-mail</label>
-            <div style={{ position: 'relative' }}>
-              <User size={18} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '6px', color: '#cbd5e1' }}>E-mail</label>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Mail size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px' }} />
               <input
                 type="email"
                 required
-                placeholder="admin@taperto.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                style={{ width: '100%', padding: '10px 10px 10px 40px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '0.9rem' }}
+                placeholder="seu.email@empresa.com"
+                style={{ width: '100%', padding: '10px 10px 10px 40px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff', fontSize: '0.9rem' }}
               />
             </div>
           </div>
 
           <div>
-            <label style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', marginBottom: '6px' }}>Palavra-passe</label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={18} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '6px', color: '#cbd5e1' }}>Senha</label>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <Lock size={18} color="#94a3b8" style={{ position: 'absolute', left: '12px' }} />
               <input
                 type="password"
                 required
+                value={senha}
+                onChange={e => setSenha(e.target.value)}
                 placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                style={{ width: '100%', padding: '10px 10px 10px 40px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: 'white', fontSize: '0.9rem' }}
+                style={{ width: '100%', padding: '10px 10px 10px 40px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff', fontSize: '0.9rem' }}
               />
             </div>
           </div>
 
           <button
             type="submit"
-            style={{ width: '100%', backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', marginTop: '8px' }}
+            style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}
           >
-            Entrar no Sistema
+            Entrar
           </button>
         </form>
+
+        {/* Botão / Link para novos usuários */}
+        <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid #334155', paddingTop: '16px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginBottom: '8px' }}>
+            Ainda não tem uma conta?
+          </p>
+          <Link
+            to="/cadastro"
+            style={{ color: '#60a5fa', fontSize: '0.9rem', fontWeight: 'bold', textDecoration: 'none' }}
+          >
+            Criar nova conta no TáPerto
+          </Link>
+        </div>
 
       </div>
     </div>

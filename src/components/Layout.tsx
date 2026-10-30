@@ -1,22 +1,18 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { LayoutDashboard, Truck, Users, LogOut, Package } from 'lucide-react';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-export function Layout({ children }: LayoutProps) {
+export function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
 
   function handleLogout() {
+    localStorage.removeItem('@taperto:authenticated');
     localStorage.removeItem('@taperto:token');
     navigate('/login');
   }
 
   const menuItems = [
-    { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Fretes', path: '/fretes', icon: Package },
     { label: 'Motoristas', path: '/motoristas', icon: Users },
     { label: 'Veículos', path: '/veiculos', icon: Truck },
@@ -90,9 +86,9 @@ export function Layout({ children }: LayoutProps) {
         </button>
       </aside>
 
-      {/* Conteúdo Principal */}
+      {/* Conteúdo Principal (Renderiza a rota filha correspondente) */}
       <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
-        {children}
+        <Outlet />
       </main>
 
     </div>

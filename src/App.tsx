@@ -1,67 +1,33 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/Login';
+import { Cadastro } from './pages/Cadastro';
 import { Dashboard } from './pages/Dashboard';
 import { Fretes } from './pages/Fretes';
 import { Motoristas } from './pages/Motoristas';
 import { Veiculos } from './pages/Veiculos';
 import { RastreioPublico } from './pages/RastreioPublico';
-import AppLayout from './components/AppLayout';
-
-function RotaPrivada({ children }: { children: React.ReactNode }) {
-  const token = sessionStorage.getItem('@taperto:token');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return <AppLayout>{children}</AppLayout>;
-}
+import { Layout } from './components/Layout';
+import { AuthGuard } from './components/AuthGuard';
 
 export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rota Pública de Autenticação */}
+        {/* Rotas Públicas */}
         <Route path="/login" element={<Login />} />
-
-        {/* Rota Pública de Rastreamento (Sem Sidebar) */}
+        <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/rastreio/:id" element={<RastreioPublico />} />
 
-        {/* Rotas Privadas com Sidebar do Sistema */}
-        <Route 
-          path="/" 
-          element={
-            <RotaPrivada>
-              <Dashboard />
-            </RotaPrivada>
-          } 
-        />
-        <Route 
-          path="/fretes" 
-          element={
-            <RotaPrivada>
-              <Fretes />
-            </RotaPrivada>
-          } 
-        />
-        <Route 
-          path="/motoristas" 
-          element={
-            <RotaPrivada>
-              <Motoristas />
-            </RotaPrivada>
-          } 
-        />
-        <Route 
-          path="/veiculos" 
-          element={
-            <RotaPrivada>
-              <Veiculos />
-            </RotaPrivada>
-          } 
-        />
+        {/* Rotas Protegidas */}
+        <Route element={<AuthGuard><Layout /></AuthGuard>}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/fretes" element={<Fretes />} />
+          <Route path="/motoristas" element={<Motoristas />} />
+          <Route path="/veiculos" element={<Veiculos />} />
+        </Route>
 
-        {/* Redirecionamento padrão */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Redirecionamento Padrão */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,13 +1,20 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
-export function AuthGuard() {
-  const token = localStorage.getItem('@taperto:token');
+interface AuthGuardProps {
+  children: React.ReactNode;
+}
 
-  // Se não existir token guardado, redireciona para a tela de login
-  if (!token) {
+export function AuthGuard({ children }: AuthGuardProps) {
+  // Simulação de verificação de autenticação no localStorage
+  const isAuthenticated = localStorage.getItem('@taperto:authenticated') === 'true';
+
+  if (!isAuthenticated) {
+    // Redireciona para o login caso o utilizador não esteja autenticado
     return <Navigate to="/login" replace />;
   }
 
-  // Se o token existir, permite o acesso às rotas filhas
-  return <Outlet />;
+  return <>{children}</>;
 }
+
+export default AuthGuard;
