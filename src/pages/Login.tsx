@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { Truck, Lock, Mail, AlertCircle } from 'lucide-react';
@@ -9,7 +9,7 @@ export function Login() {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
 
-  async function handleLogin(e: FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
 
@@ -21,7 +21,6 @@ export function Login() {
     try {
       const response = await api.post('/login', { email, senha });
 
-      // Armazena diretamente os valores retornados pela API
       localStorage.setItem('@taperto:token', response.data.token);
       localStorage.setItem('@taperto:empresa', JSON.stringify(response.data.empresa));
 
