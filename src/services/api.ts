@@ -1,13 +1,13 @@
-import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import axios from 'axios';
 
 export const api = axios.create({
   baseURL: 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json',
   }
-}); // Fechei corretamente a função axios.create
+});
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+api.interceptors.request.use((config: any) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('@taperto:token') : null;
 
   if (token && config.headers) {
@@ -18,8 +18,8 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 });
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: AxiosError) => {
+  (response: any) => response,
+  (error: any) => {
     if (error.response && error.response.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('@taperto:token');
