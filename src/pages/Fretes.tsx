@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Package, Plus, Search, MapPin, DollarSign, User, Truck, Calendar, AlertCircle, X, CheckCircle2 } from 'lucide-react';
+import { Package, Plus, Search, MapPin, User, Truck, AlertCircle, X, Filter } from 'lucide-react';
 
 interface Motorista {
   id: string;
@@ -33,6 +33,7 @@ export function Fretes() {
   
   const [modalAberto, setModalAberto] = useState(false);
   const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<string>('Todos');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -51,8 +52,6 @@ export function Fretes() {
   async function carregarDados() {
     try {
       setLoading(true);
-      
-      // Busca paralela de Fretes, Motoristas e Veículos
       const [resFretes, resMotoristas, resVeiculos] = await Promise.all([
         api.get('/fretes').catch(() => ({ data: [] })),
         api.get('/motoristas').catch(() => ({ data: [] })),
@@ -100,23 +99,30 @@ export function Fretes() {
       };
 
       const response = await api.post('/fretes', payload);
-      
-      // Atualiza a lista local com o novo frete
       setFretes(prev => [response.data, ...prev]);
       setModalAberto(false);
       limparFormulario();
-      carregarDados(); // Recarrega para trazer as relações populadas
+      carregarDados();
     } catch (err: any) {
       setErro(err.response?.data?.erro || 'Erro ao guardar o frete. Tente novamente.');
     }
   }
 
-  const fretesFiltrados = fretes.filter(f => 
-    f.origem.toLowerCase().includes(busca.toLowerCase()) ||
-    f.destino.toLowerCase().includes(busca.toLowerCase()) ||
-    f.motorista?.nome.toLowerCase().includes(busca.toLowerCase()) ||
-    f.veiculo?.placa.toLowerCase().includes(busca.toLowerCase())
-  );
+  // Aplicação combinada da busca textual e do filtro por status
+  const fretesFiltrados = fretes.filter(frete => {
+    const combinaBusca = 
+      frete.origem.toLowerCase().includes(busca.toLowerCase()) ||
+      frete.destino.toLowerCase().includes(busca.toLowerCase()) ||
+      frete.motorista?.nome.toLowerCase().includes(busca.toLowerCase()) ||
+      frete.veiculo?.placa.toLowerCase().includes(busca.toLowerCase());
+
+    const statusAtual = frete.status || 'Pendente';
+    const combinaStatus = filtroStatus === 'Todos' || statusAtual.toLowerCase() === filtroStatus.toLowerCase();
+
+    return combinaBusca && combinaStatus;
+  });
+
+  const opcoesStatus = ['Todos', 'Pendente', 'Em Trânsito', 'Entregue'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -125,7 +131,7 @@ export function Fretes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ color: '#f8fafc', margin: 0, fontSize: '1.75rem', fontWeight: 'bold' }}>Gestão de Fretes</h1>
-          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Cadastre e atribua motoristas e veículos aos fretes.</p>
+          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Cadastre, atribua e filtre os fretes por estado operacional.</p>
         </div>
         <button 
           onClick={() => { limparFormulario(); setModalAberto(true); }}
@@ -136,16 +142,51 @@ export function Fretes() {
         </button>
       </div>
 
-      {/* Barra de Busca */}
-      <div style={{ backgroundColor: '#1e293b', padding: '16px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <Search size={20} color="#64748b" />
-        <input 
-          type="text" 
-          placeholder="Buscar por origem, destino, motorista ou placa..."
-          value={busca}
-          onChange={e => setBusca(e.target.value)}
-          style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '0.95rem', outline: 'none' }}
-        />
+      {/* Área de Filtros e Busca */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          
+          {/* Campo de Busca */}
+          <div style={{ flex: 1, minWidth: '260px', backgroundColor: '#1e293b', padding: '12px 16px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Search size={20} color="#64748b" />
+            <input 
+              type="text" 
+              placeholder="Buscar por origem, destino, motorista ou placa..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', outline: 'none' }}
+            />
+          </div>
+
+          {/* Botões Rápidos de Filtro por Status */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Filter size={18} color="#64748b" style={{ marginRight: '4px' }} />
+            {opcoesStatus.map(status => {
+              const ativo = filtroStatus === status;
+              return (
+                <button
+                  key={status}
+                  onClick={() => setFiltroStatus(status)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    border: '1px solid',
+                    borderColor: ativo ? '#3b82f6' : '#334155',
+                    backgroundColor: ativo ? '#2563eb' : '#1e293b',
+                    color: ativo ? '#ffffff' : '#94a3b8',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {status}
+                </button>
+              );
+            })}
+          </div>
+
+        </div>
       </div>
 
       {/* Tabela de Fretes */}
@@ -164,11 +205,11 @@ export function Fretes() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Carregando fretes...</td>
+                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>A carregar fretes...</td>
               </tr>
             ) : fretesFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Nenhum frete encontrado.</td>
+                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Nenhum frete encontrado com os filtros selecionados.</td>
               </tr>
             ) : (
               fretesFiltrados.map(frete => (
@@ -282,7 +323,6 @@ export function Fretes() {
                 </div>
               </div>
 
-              {/* Seleção de Motorista */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>Vincular Motorista</label>
                 <select 
@@ -297,7 +337,6 @@ export function Fretes() {
                 </select>
               </div>
 
-              {/* Seleção de Veículo */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>Vincular Veículo</label>
                 <select 
