@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Users, Truck, DollarSign, Clock, CheckCircle2, TrendingUp, Calculator } from 'lucide-react';
+import { Package, Users, Truck, DollarSign, Clock, CheckCircle2, TrendingUp, Calculator, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Stats {
   totalFretes: number;
@@ -23,10 +24,13 @@ export function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Cotação Rápida em Reais
+  // Estados do Simulador de Cotação Rápida
   const [distanciaKm, setDistanciaKm] = useState('');
   const [pesoTon, setPesoTon] = useState('');
   const [valorCotado, setValorCotado] = useState<number | null>(null);
+
+  // Estado para visualização do QR Code de rastreio no Modal
+  const [qrCodeCodigo, setQrCodeCodigo] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadStats() {
@@ -55,7 +59,6 @@ export function Dashboard() {
     const ton = Number(pesoTon);
 
     if (km > 0 && ton > 0) {
-      // Cálculo em Reais: R$ 4,50/km + R$ 85,00/ton
       const total = km * 4.5 + ton * 85;
       setValorCotado(total);
     }
@@ -66,9 +69,17 @@ export function Dashboard() {
   }
 
   const total = stats?.totalFretes || 0;
-  const pctPendentes = total > 0 ? ((stats?.fretesPendentes || 0) / total) * 100 : 0;
-  const pctEmTransito = total > 0 ? ((stats?.fretesEmTransito || 0) / total) * 100 : 0;
-  const pctEntregues = total > 0 ? ((stats?.fretesEntregues || 0) / total) * 100 : 0;
+  const pendentes = stats?.fretesPendentes || 0;
+  const emTransito = stats?.fretesEmTransito || 0;
+  const entregues = stats?.fretesEntregues || 0;
+
+  const pctPendentes = total > 0 ? (pendentes / total) * 100 : 0;
+  const pctEmTransito = total > 0 ? (emTransito / total) * 100 : 0;
+  const pctEntregues = total > 0 ? (entregues / total) * 100 : 0;
+
+  // Cálculo de Ângulos para o Gráfico em Pizza (Conic Gradient)
+  const anglePendentes = (pendentes / (total || 1)) * 360;
+  const angleEmTransito = anglePendentes + (emTransito / (total || 1)) * 360;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -77,7 +88,7 @@ export function Dashboard() {
         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>Métricas calculadas em tempo real da sua operação</p>
       </div>
 
-      {/* Cards Principais com Moeda R$ e Moldura Tracejada */}
+      {/* Cards Principais com Moldura Tracejada */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
         <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{ backgroundColor: '#2563eb20', padding: '12px', borderRadius: '10px', color: '#60a5fa' }}>
@@ -122,7 +133,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Caixa de Diálogo de Cotação Rápida */}
+      {/* Simulador / Cotação Rápida de Frete */}
       <div style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '12px', border: '1px dashed #334155' }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Calculator size={20} color="#60a5fa" />
@@ -152,37 +163,69 @@ export function Dashboard() {
         )}
       </div>
 
-      {/* Gráficos e Status */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+      {/* Gráficos em Pizza e Barras + Status */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
         
-        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Gráfico em Pizza + Gráfico em Barras */}
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <TrendingUp size={20} color="#60a5fa" />
-            Gráfico de Distribuição do Status
+            Gráfico de Status (Pizza & Barras)
           </h2>
 
-          <div style={{ height: '20px', backgroundColor: '#0f172a', borderRadius: '10px', overflow: 'hidden', display: 'flex', border: '1px solid #334155' }}>
-            {pctPendentes > 0 && <div style={{ width: `${pctPendentes}%`, backgroundColor: '#fbbf24' }} title={`Pendentes: ${pctPendentes.toFixed(0)}%`} />}
-            {pctEmTransito > 0 && <div style={{ width: `${pctEmTransito}%`, backgroundColor: '#3b82f6' }} title={`Em Trânsito: ${pctEmTransito.toFixed(0)}%`} />}
-            {pctEntregues > 0 && <div style={{ width: `${pctEntregues}%`, backgroundColor: '#10b981' }} title={`Entregues: ${pctEntregues.toFixed(0)}%`} />}
-            {total === 0 && <div style={{ width: '100%', backgroundColor: '#334155' }} title="Sem dados" />}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', gap: '20px', flexWrap: 'wrap' }}>
+            {/* Gráfico em Pizza (Pie Chart CSS Native) */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <div
+                style={{
+                  width: '120px',
+                  height: '120px',
+                  borderRadius: '50%',
+                  background: total === 0 
+                    ? '#334155' 
+                    : `conic-gradient(#fbbf24 0deg ${anglePendentes}deg, #3b82f6 ${anglePendentes}deg ${angleEmTransito}deg, #10b981 ${angleEmTransito}deg 360deg)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 10px rgba(0,0,0,0.5)'
+                }}
+              >
+                <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: '#94a3b8' }}>
+                  {total} Fretes
+                </div>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Gráfico em Pizza</span>
+            </div>
+
+            {/* Legenda do Gráfico */}
+            <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '10px', color: '#cbd5e1', flex: 1, minWidth: '150px' }}>
+              <li style={{ borderBottom: '1px dashed #334155', paddingBottom: '6px' }}>
+                <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>●</span> Pendentes: <strong>{pendentes}</strong>
+              </li>
+              <li style={{ borderBottom: '1px dashed #334155', paddingBottom: '6px' }}>
+                <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>●</span> Em Trânsito: <strong>{emTransito}</strong>
+              </li>
+              <li style={{ borderBottom: '1px dashed #334155', paddingBottom: '6px' }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold' }}>●</span> Entregues: <strong>{entregues}</strong>
+              </li>
+            </ul>
           </div>
 
-          <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '12px', color: '#cbd5e1' }}>
-            <li style={{ borderBottom: '1px dashed #334155', paddingBottom: '8px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><Clock size={16} color="#fbbf24" /> Pendentes:</span> <strong>{stats?.fretesPendentes}</strong>
-            </li>
-            <li style={{ borderBottom: '1px dashed #334155', paddingBottom: '8px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><Truck size={16} color="#60a5fa" /> Em Trânsito:</span> <strong>{stats?.fretesEmTransito}</strong>
-            </li>
-            <li style={{ borderBottom: '1px dashed #334155', paddingBottom: '8px' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><CheckCircle2 size={16} color="#34d399" /> Entregues:</span> <strong>{stats?.fretesEntregues}</strong>
-            </li>
-          </ul>
+          {/* Gráfico em Barras */}
+          <div>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Gráfico de Proporção em Barras</span>
+            <div style={{ height: '18px', backgroundColor: '#0f172a', borderRadius: '8px', overflow: 'hidden', display: 'flex', border: '1px solid #334155' }}>
+              {pctPendentes > 0 && <div style={{ width: `${pctPendentes}%`, backgroundColor: '#fbbf24' }} title={`Pendentes: ${pctPendentes.toFixed(0)}%`} />}
+              {pctEmTransito > 0 && <div style={{ width: `${pctEmTransito}%`, backgroundColor: '#3b82f6' }} title={`Em Trânsito: ${pctEmTransito.toFixed(0)}%`} />}
+              {pctEntregues > 0 && <div style={{ width: `${pctEntregues}%`, backgroundColor: '#10b981' }} title={`Entregues: ${pctEntregues.toFixed(0)}%`} />}
+              {total === 0 && <div style={{ width: '100%', backgroundColor: '#334155' }} title="Sem dados" />}
+            </div>
+          </div>
         </div>
 
+        {/* Últimos Fretes com Ícone e Modal do QR Code */}
         <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>Últimos Fretes Registrados</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', margin: 0 }}>Últimos Fretes e QR Code de Rastreio</h2>
           {stats?.ultimosFretes.length === 0 ? (
             <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Nenhum frete cadastrado ainda.</p>
           ) : (
@@ -194,7 +237,18 @@ export function Dashboard() {
                       <strong style={{ color: '#60a5fa', display: 'block', fontSize: '0.9rem' }}>{f.codigo}</strong>
                       <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{f.origem} ➔ {f.destino}</span>
                     </div>
-                    <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#34d399' }}>R$ {f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#34d399' }}>
+                        R$ {f.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      <button
+                        onClick={() => setQrCodeCodigo(f.codigo)}
+                        style={{ backgroundColor: '#0f172a', border: '1px solid #334155', color: '#60a5fa', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        title="Ver QR Code de Rastreio"
+                      >
+                        <QrCode size={18} />
+                      </button>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -203,6 +257,28 @@ export function Dashboard() {
         </div>
 
       </div>
+
+      {/* Modal para Visualização do QR Code de Rastreio */}
+      {qrCodeCodigo && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#1e293b', padding: '28px', borderRadius: '16px', border: '1px dashed #334155', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', maxWidth: '360px', width: '90%' }}>
+            <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>QR Code de Rastreio</h3>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#94a3b8' }}>Escaneie para acompanhar o frete <strong>{qrCodeCodigo}</strong></p>
+            
+            <div style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '12px' }}>
+              <QRCodeSVG value={`http://localhost:5173/rastreio?codigo=${qrCodeCodigo}`} size={180} />
+            </div>
+
+            <button
+              onClick={() => setQrCodeCodigo(null)}
+              style={{ width: '100%', padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
