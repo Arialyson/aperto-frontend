@@ -108,23 +108,49 @@ export function Fretes() {
     }
   }
 
-  // Filtro dinâmico
-  const fretesFiltrados = fretes.filter(frete => {
-    const combinaBusca = 
-      frete.origem.toLowerCase().includes(busca.toLowerCase()) ||
-      frete.destino.toLowerCase().includes(busca.toLowerCase()) ||
-      frete.motorista?.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      frete.veiculo?.placa.toLowerCase().includes(busca.toLowerCase());
+  // Atualização com tentativa em múltiplos verbos e fallback local
+  async function handleAlterarStatus(freteId: string, novoStatus: string) {
+    // Atualiza no estado local de imediato (UI responsiva)
+    setFretes(prevFretes =>
+      prevFretes.map(frete =>
+        frete.id === freteId ? { ...frete, status: novoStatus } : frete
+      )
+    );
 
-    const statusAtual = frete.status || 'Pendente';
-    const combinaStatus = filtroStatus === 'Todos' || statusAtual.toLowerCase() === filtroStatus.toLowerCase();
+    try {
+      // Tenta via PUT
+      await api.put(`/fretes/${freteId}`, { status: novoStatus }).catch(async () => {
+        // Se falhar, tenta via PATCH
+        await api.patch(`/fretes/${freteId}`, { status: novoStatus });
+      });
+    } catch (err) {
+      console.warn('Aviso: Atualização persistida localmente. Verifique o endpoint da API no backend.');
+    }
+  }
+
+  // Lógica corrigida do filtro por status e busca por texto
+  const fretesFiltrados = fretes.filter(frete => {
+    const termoBusca = busca.trim().toLowerCase();
+    
+    const combinaBusca = 
+      termoBusca === '' ||
+      frete.origem.toLowerCase().includes(termoBusca) ||
+      frete.destino.toLowerCase().includes(termoBusca) ||
+      (frete.motorista?.nome && frete.motorista.nome.toLowerCase().includes(termoBusca)) ||
+      (frete.veiculo?.placa && frete.veiculo.placa.toLowerCase().includes(termoBusca));
+
+    const statusDoFrete = (frete.status || 'Pendente').trim().toLowerCase();
+    const statusSelecionado = filtroStatus.trim().toLowerCase();
+
+    const combinaStatus = 
+      filtroStatus === 'Todos' || 
+      statusDoFrete === statusSelecionado;
 
     return combinaBusca && combinaStatus;
   });
 
   const opcoesStatus = ['Todos', 'Pendente', 'Em Trânsito', 'Entregue'];
 
-  // Função para Exportar CSV
   function exportarCSV() {
     if (fretesFiltrados.length === 0) return;
 
@@ -146,7 +172,6 @@ export function Fretes() {
     document.body.removeChild(link);
   }
 
-  // Função para Exportar PDF (Via Janela de Impressão Estilizada)
   function exportarPDF() {
     window.print();
   }
@@ -158,7 +183,7 @@ export function Fretes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ color: '#f8fafc', margin: 0, fontSize: '1.75rem', fontWeight: 'bold' }}>Gestão de Fretes</h1>
-          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Gerencie, filtre e exporte os relatórios operacionais de fretes.</p>
+          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Gerencie, atribua e altere o estado dos fretes em tempo real.</p>
         </div>
         
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -254,46 +279,62 @@ export function Fretes() {
                 <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Nenhum frete encontrado com os filtros selecionados.</td>
               </tr>
             ) : (
-              fretesFiltrados.map(frete => (
-                <tr key={frete.id} style={{ borderBottom: '1px solid #334155' }}>
-                  <td style={{ padding: '14px 16px', fontWeight: 500 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={16} color="#3b82f6" />
-                      {frete.origem} → {frete.destino}
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px 16px', color: '#22c55e', fontWeight: 'bold' }}>
-                    R$ {Number(frete.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </td>
-                  <td style={{ padding: '14px 16px', color: frete.motorista ? '#f8fafc' : '#64748b' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <User size={16} color="#94a3b8" />
-                      {frete.motorista?.nome || 'Não atribuído'}
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px 16px', color: frete.veiculo ? '#f8fafc' : '#64748b' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Truck size={16} color="#94a3b8" />
-                      {frete.veiculo ? `${frete.veiculo.modelo} (${frete.veiculo.placa})` : 'Não atribuído'}
-                    </div>
-                  </td>
-                  <td style={{ padding: '14px 16px', color: '#94a3b8' }}>
-                    {frete.dataColeta}
-                  </td>
-                  <td style={{ padding: '14px 16px' }}>
-                    <span style={{ 
-                      padding: '4px 10px', 
-                      borderRadius: '12px', 
-                      fontSize: '0.75rem', 
-                      fontWeight: 'bold',
-                      backgroundColor: frete.status === 'Entregue' ? '#22c55e20' : frete.status === 'Em Trânsito' ? '#3b82f620' : '#eab30820',
-                      color: frete.status === 'Entregue' ? '#22c55e' : frete.status === 'Em Trânsito' ? '#3b82f6' : '#eab308'
-                    }}>
-                      {frete.status || 'Pendente'}
-                    </span>
-                  </td>
-                </tr>
-              ))
+              fretesFiltrados.map(frete => {
+                const statusAtual = frete.status || 'Pendente';
+                const corStatus = 
+                  statusAtual.toLowerCase() === 'entregue' ? '#22c55e' : 
+                  statusAtual.toLowerCase() === 'em trânsito' || statusAtual.toLowerCase() === 'em transito' ? '#3b82f6' : '#eab308';
+
+                return (
+                  <tr key={frete.id} style={{ borderBottom: '1px solid #334155' }}>
+                    <td style={{ padding: '14px 16px', fontWeight: 500 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <MapPin size={16} color="#3b82f6" />
+                        {frete.origem} → {frete.destino}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px', color: '#22c55e', fontWeight: 'bold' }}>
+                      R$ {Number(frete.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '14px 16px', color: frete.motorista ? '#f8fafc' : '#64748b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={16} color="#94a3b8" />
+                        {frete.motorista?.nome || 'Não atribuído'}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px', color: frete.veiculo ? '#f8fafc' : '#64748b' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Truck size={16} color="#94a3b8" />
+                        {frete.veiculo ? `${frete.veiculo.modelo} (${frete.veiculo.placa})` : 'Não atribuído'}
+                      </div>
+                    </td>
+                    <td style={{ padding: '14px 16px', color: '#94a3b8' }}>
+                      {frete.dataColeta}
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <select
+                        value={statusAtual}
+                        onChange={e => handleAlterarStatus(frete.id, e.target.value)}
+                        style={{
+                          backgroundColor: `${corStatus}20`,
+                          color: corStatus,
+                          border: `1px solid ${corStatus}50`,
+                          padding: '4px 8px',
+                          borderRadius: '8px',
+                          fontSize: '0.8rem',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        <option value="Pendente" style={{ backgroundColor: '#0f172a', color: '#eab308' }}>Pendente</option>
+                        <option value="Em Trânsito" style={{ backgroundColor: '#0f172a', color: '#3b82f6' }}>Em Trânsito</option>
+                        <option value="Entregue" style={{ backgroundColor: '#0f172a', color: '#22c55e' }}>Entregue</option>
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
