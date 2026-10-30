@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Plus, Search, MapPin, User, Truck, AlertCircle, X, Filter, Download, FileText } from 'lucide-react';
+import { Plus, Search, MapPin, User, Truck, AlertCircle, X, Filter, Download, FileText, Trash2 } from 'lucide-react';
 
 interface Motorista {
   id: string;
@@ -108,9 +108,7 @@ export function Fretes() {
     }
   }
 
-  // Atualização com tentativa em múltiplos verbos e fallback local
   async function handleAlterarStatus(freteId: string, novoStatus: string) {
-    // Atualiza no estado local de imediato (UI responsiva)
     setFretes(prevFretes =>
       prevFretes.map(frete =>
         frete.id === freteId ? { ...frete, status: novoStatus } : frete
@@ -118,17 +116,29 @@ export function Fretes() {
     );
 
     try {
-      // Tenta via PUT
       await api.put(`/fretes/${freteId}`, { status: novoStatus }).catch(async () => {
-        // Se falhar, tenta via PATCH
         await api.patch(`/fretes/${freteId}`, { status: novoStatus });
       });
     } catch (err) {
-      console.warn('Aviso: Atualização persistida localmente. Verifique o endpoint da API no backend.');
+      console.warn('Aviso: Atualização mantida localmente.');
     }
   }
 
-  // Lógica corrigida do filtro por status e busca por texto
+  // Função para Excluir Frete
+  async function handleExcluirFrete(freteId: string) {
+    if (!window.confirm('Tem certeza que deseja apagar este frete?')) return;
+
+    // Atualização otimista na tela
+    setFretes(prev => prev.filter(f => f.id !== freteId));
+
+    try {
+      await api.delete(`/fretes/${freteId}`);
+    } catch (err) {
+      console.warn('Aviso: Frete removido da interface local.');
+    }
+  }
+
+  // Filtro dinâmico
   const fretesFiltrados = fretes.filter(frete => {
     const termoBusca = busca.trim().toLowerCase();
     
@@ -183,7 +193,7 @@ export function Fretes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ color: '#f8fafc', margin: 0, fontSize: '1.75rem', fontWeight: 'bold' }}>Gestão de Fretes</h1>
-          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Gerencie, atribua e altere o estado dos fretes em tempo real.</p>
+          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Gerencie, atribua, altere o status e remova fretes do sistema.</p>
         </div>
         
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -267,16 +277,17 @@ export function Fretes() {
               <th style={{ padding: '14px 16px' }}>Veículo</th>
               <th style={{ padding: '14px 16px' }}>Data Coleta</th>
               <th style={{ padding: '14px 16px' }}>Status</th>
+              <th style={{ padding: '14px 16px', textAlign: 'center' }}>Ações</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Carregando fretes...</td>
+                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Carregando fretes...</td>
               </tr>
             ) : fretesFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Nenhum frete encontrado com os filtros selecionados.</td>
+                <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Nenhum frete encontrado com os filtros selecionados.</td>
               </tr>
             ) : (
               fretesFiltrados.map(frete => {
@@ -331,6 +342,26 @@ export function Fretes() {
                         <option value="Em Trânsito" style={{ backgroundColor: '#0f172a', color: '#3b82f6' }}>Em Trânsito</option>
                         <option value="Entregue" style={{ backgroundColor: '#0f172a', color: '#22c55e' }}>Entregue</option>
                       </select>
+                    </td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                      <button
+                        onClick={() => handleExcluirFrete(frete.id)}
+                        title="Apagar frete"
+                        style={{
+                          backgroundColor: '#ef444420',
+                          border: '1px solid #ef444450',
+                          color: '#ef4444',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 );
