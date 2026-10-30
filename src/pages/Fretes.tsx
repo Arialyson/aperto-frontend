@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Package, Plus, Search, MapPin, User, Truck, AlertCircle, X, Filter } from 'lucide-react';
+import { Plus, Search, MapPin, User, Truck, AlertCircle, X, Filter, Download, FileText } from 'lucide-react';
 
 interface Motorista {
   id: string;
@@ -108,7 +108,7 @@ export function Fretes() {
     }
   }
 
-  // Aplicação combinada da busca textual e do filtro por status
+  // Filtro dinâmico
   const fretesFiltrados = fretes.filter(frete => {
     const combinaBusca = 
       frete.origem.toLowerCase().includes(busca.toLowerCase()) ||
@@ -124,6 +124,33 @@ export function Fretes() {
 
   const opcoesStatus = ['Todos', 'Pendente', 'Em Trânsito', 'Entregue'];
 
+  // Função para Exportar CSV
+  function exportarCSV() {
+    if (fretesFiltrados.length === 0) return;
+
+    const cabecalho = 'Origem;Destino;Valor (R$);Motorista;Veiculo;Placa;Data Coleta;Status\n';
+    const linhas = fretesFiltrados.map(f => {
+      const motorista = f.motorista?.nome || 'N/A';
+      const veiculo = f.veiculo?.modelo || 'N/A';
+      const placa = f.veiculo?.placa || 'N/A';
+      return `"${f.origem}";"${f.destino}";"${f.valor}";"${motorista}";"${veiculo}";"${placa}";"${f.dataColeta}";"${f.status || 'Pendente'}"`;
+    }).join('\n');
+
+    const blob = new Blob(['\uFEFF' + cabecalho + linhas], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `relatorio_fretes_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Função para Exportar PDF (Via Janela de Impressão Estilizada)
+  function exportarPDF() {
+    window.print();
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
@@ -131,22 +158,39 @@ export function Fretes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ color: '#f8fafc', margin: 0, fontSize: '1.75rem', fontWeight: 'bold' }}>Gestão de Fretes</h1>
-          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Cadastre, atribua e filtre os fretes por estado operacional.</p>
+          <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontSize: '0.875rem' }}>Gerencie, filtre e exporte os relatórios operacionais de fretes.</p>
         </div>
-        <button 
-          onClick={() => { limparFormulario(); setModalAberto(true); }}
-          style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-        >
-          <Plus size={20} />
-          Novo Frete
-        </button>
+        
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={exportarCSV}
+            style={{ backgroundColor: '#059669', color: 'white', border: 'none', padding: '10px 14px', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem' }}
+          >
+            <Download size={18} />
+            Exportar CSV
+          </button>
+
+          <button 
+            onClick={exportarPDF}
+            style={{ backgroundColor: '#475569', color: 'white', border: 'none', padding: '10px 14px', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem' }}
+          >
+            <FileText size={18} />
+            Gerar PDF
+          </button>
+
+          <button 
+            onClick={() => { limparFormulario(); setModalAberto(true); }}
+            style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem' }}
+          >
+            <Plus size={20} />
+            Novo Frete
+          </button>
+        </div>
       </div>
 
       {/* Área de Filtros e Busca */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-          
-          {/* Campo de Busca */}
           <div style={{ flex: 1, minWidth: '260px', backgroundColor: '#1e293b', padding: '12px 16px', borderRadius: '10px', border: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Search size={20} color="#64748b" />
             <input 
@@ -158,7 +202,6 @@ export function Fretes() {
             />
           </div>
 
-          {/* Botões Rápidos de Filtro por Status */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <Filter size={18} color="#64748b" style={{ marginRight: '4px' }} />
             {opcoesStatus.map(status => {
@@ -185,7 +228,6 @@ export function Fretes() {
               );
             })}
           </div>
-
         </div>
       </div>
 
@@ -205,7 +247,7 @@ export function Fretes() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>A carregar fretes...</td>
+                <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Carregando fretes...</td>
               </tr>
             ) : fretesFiltrados.length === 0 ? (
               <tr>
@@ -277,7 +319,6 @@ export function Fretes() {
             )}
 
             <form onSubmit={handleSalvarFrete} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>Origem *</label>
@@ -366,9 +407,7 @@ export function Fretes() {
                   Salvar Frete
                 </button>
               </div>
-
             </form>
-
           </div>
         </div>
       )}
