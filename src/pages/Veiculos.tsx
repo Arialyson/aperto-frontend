@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, Trash2, Edit2, X, Check } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check } from 'lucide-react';
 
 interface Veiculo {
   id: string;
@@ -13,13 +13,21 @@ export function Veiculos() {
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form states
   const [editingId, setEditingId] = useState<string | null>(null);
   const [placa, setPlaca] = useState('');
   const [modelo, setModelo] = useState('');
   const [capacidade, setCapacidade] = useState('');
   const [status, setStatus] = useState('Disponível');
   const [saving, setSaving] = useState(false);
+
+  // Formatação de Placa
+  function formatarPlaca(v: string) {
+    const clean = v.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 7);
+    if (clean.length > 3) {
+      return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+    }
+    return clean;
+  }
 
   async function loadVeiculos() {
     const token = localStorage.getItem('@taperto:token');
@@ -83,9 +91,7 @@ export function Veiculos() {
         body: JSON.stringify({ placa, modelo, capacidade, status })
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao guardar veículo.');
-      }
+      if (!response.ok) throw new Error('Erro ao salvar veículo.');
 
       handleCancelEdit();
       loadVeiculos();
@@ -97,7 +103,7 @@ export function Veiculos() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Tem a certeza de que deseja eliminar este veículo?')) return;
+    if (!confirm('Tem certeza de que deseja excluir este veículo?')) return;
 
     const token = localStorage.getItem('@taperto:token');
     try {
@@ -109,7 +115,7 @@ export function Veiculos() {
       if (response.ok) {
         loadVeiculos();
       } else {
-        alert('Erro ao eliminar veículo.');
+        alert('Erro ao excluir veículo.');
       }
     } catch (error) {
       alert('Erro de conexão.');
@@ -123,11 +129,10 @@ export function Veiculos() {
         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>Cadastre, edite ou remova veículos da sua frota</p>
       </div>
 
-      {/* Formulário */}
-      <form onSubmit={handleSubmit} style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'end' }}>
+      <form onSubmit={handleSubmit} style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'end' }}>
         <div>
           <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>Placa</label>
-          <input type="text" value={placa} onChange={e => setPlaca(e.target.value)} placeholder="ABC-1234" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff', textTransform: 'uppercase' }} />
+          <input type="text" value={placa} onChange={e => setPlaca(formatarPlaca(e.target.value))} placeholder="ABC-1234" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff', textTransform: 'uppercase' }} />
         </div>
 
         <div>
@@ -154,7 +159,7 @@ export function Veiculos() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button type="submit" disabled={saving} style={{ flex: 1, padding: '12px', backgroundColor: editingId ? '#10b981' : '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             {editingId ? <Check size={18} /> : <Plus size={18} />}
-            {saving ? 'A guardar...' : editingId ? 'Atualizar' : 'Cadastrar'}
+            {saving ? 'Salvando...' : editingId ? 'Atualizar' : 'Cadastrar'}
           </button>
 
           {editingId && (
@@ -165,16 +170,15 @@ export function Veiculos() {
         </div>
       </form>
 
-      {/* Lista */}
-      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', border: '1px dashed #334155', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>A carregar veículos...</div>
+          <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Carregando veículos...</div>
         ) : veiculos.length === 0 ? (
           <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Nenhum veículo cadastrado.</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+              <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px dashed #334155', color: '#94a3b8' }}>
                 <th style={{ padding: '14px 16px' }}>Placa</th>
                 <th style={{ padding: '14px 16px' }}>Modelo</th>
                 <th style={{ padding: '14px 16px' }}>Capacidade</th>
@@ -184,7 +188,7 @@ export function Veiculos() {
             </thead>
             <tbody>
               {veiculos.map(v => (
-                <tr key={v.id} style={{ borderBottom: '1px solid #334155' }}>
+                <tr key={v.id} style={{ borderBottom: '1px dashed #334155' }}>
                   <td style={{ padding: '14px 16px', fontWeight: 'bold', color: '#60a5fa' }}>{v.placa}</td>
                   <td style={{ padding: '14px 16px' }}>{v.modelo}</td>
                   <td style={{ padding: '14px 16px' }}>{v.capacidade}</td>
@@ -197,7 +201,7 @@ export function Veiculos() {
                     <button onClick={() => handleStartEdit(v)} style={{ backgroundColor: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer' }} title="Editar">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDelete(v.id)} style={{ backgroundColor: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer' }} title="Eliminar">
+                    <button onClick={() => handleDelete(v.id)} style={{ backgroundColor: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer' }} title="Excluir">
                       <Trash2 size={18} />
                     </button>
                   </td>

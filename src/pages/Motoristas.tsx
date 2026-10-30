@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Plus, Trash2, Edit2, X, Check } from 'lucide-react';
+import { Plus, Trash2, Edit2, X, Check } from 'lucide-react';
 
 interface Motorista {
   id: string;
@@ -13,13 +13,33 @@ export function Motoristas() {
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form states
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [telefone, setTelefone] = useState('');
   const [cnh, setCnh] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // Máscaras de Formatação
+  function formatarCPF(v: string) {
+    const nums = v.replace(/\D/g, '').slice(0, 11);
+    return nums
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+
+  function formatarTelefone(v: string) {
+    const nums = v.replace(/\D/g, '').slice(0, 11);
+    if (nums.length <= 10) {
+      return nums
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    return nums
+      .replace(/(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{5})(\d)/, '$1-$2');
+  }
 
   async function loadMotoristas() {
     const token = localStorage.getItem('@taperto:token');
@@ -83,9 +103,7 @@ export function Motoristas() {
         body: JSON.stringify({ nome, cpf, telefone, cnh })
       });
 
-      if (!response.ok) {
-        throw new Error('Erro ao guardar motorista.');
-      }
+      if (!response.ok) throw new Error('Erro ao salvar motorista.');
 
       handleCancelEdit();
       loadMotoristas();
@@ -97,7 +115,7 @@ export function Motoristas() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Tem a certeza de que deseja eliminar este motorista?')) return;
+    if (!confirm('Tem certeza de que deseja excluir este motorista?')) return;
 
     const token = localStorage.getItem('@taperto:token');
     try {
@@ -109,7 +127,7 @@ export function Motoristas() {
       if (response.ok) {
         loadMotoristas();
       } else {
-        alert('Erro ao eliminar motorista.');
+        alert('Erro ao excluir motorista.');
       }
     } catch (error) {
       alert('Erro de conexão.');
@@ -123,32 +141,31 @@ export function Motoristas() {
         <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '4px' }}>Cadastre, edite ou remova os motoristas da sua frota</p>
       </div>
 
-      {/* Formulário */}
-      <form onSubmit={handleSubmit} style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px solid #334155', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'end' }}>
+      <form onSubmit={handleSubmit} style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', border: '1px dashed #334155', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', alignItems: 'end' }}>
         <div>
           <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>Nome Completo</label>
           <input type="text" value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: João Silva" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} />
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>CPF / Documento</label>
-          <input type="text" value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} />
+          <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>CPF</label>
+          <input type="text" value={cpf} onChange={e => setCpf(formatarCPF(e.target.value))} placeholder="000.000.000-00" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} />
         </div>
 
         <div>
           <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>Telefone</label>
-          <input type="text" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(00) 90000-0000" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} />
+          <input type="text" value={telefone} onChange={e => setTelefone(formatarTelefone(e.target.value))} placeholder="(00) 90000-0000" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} />
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>CNH / Carta</label>
+          <label style={{ display: 'block', fontSize: '0.875rem', color: '#cbd5e1', marginBottom: '6px' }}>CNH</label>
           <input type="text" value={cnh} onChange={e => setCnh(e.target.value)} placeholder="00000000000" style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', color: '#fff' }} />
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
           <button type="submit" disabled={saving} style={{ flex: 1, padding: '12px', backgroundColor: editingId ? '#10b981' : '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
             {editingId ? <Check size={18} /> : <Plus size={18} />}
-            {saving ? 'A guardar...' : editingId ? 'Atualizar' : 'Cadastrar'}
+            {saving ? 'Salvando...' : editingId ? 'Atualizar' : 'Cadastrar'}
           </button>
 
           {editingId && (
@@ -159,18 +176,17 @@ export function Motoristas() {
         </div>
       </form>
 
-      {/* Lista */}
-      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+      <div style={{ backgroundColor: '#1e293b', borderRadius: '12px', border: '1px dashed #334155', overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>A carregar motoristas...</div>
+          <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Carregando motoristas...</div>
         ) : motoristas.length === 0 ? (
           <div style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>Nenhum motorista cadastrado.</div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
             <thead>
-              <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid #334155', color: '#94a3b8' }}>
+              <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px dashed #334155', color: '#94a3b8' }}>
                 <th style={{ padding: '14px 16px' }}>Nome</th>
-                <th style={{ padding: '14px 16px' }}>CPF / Doc</th>
+                <th style={{ padding: '14px 16px' }}>CPF</th>
                 <th style={{ padding: '14px 16px' }}>Telefone</th>
                 <th style={{ padding: '14px 16px' }}>CNH</th>
                 <th style={{ padding: '14px 16px' }}>Ações</th>
@@ -178,7 +194,7 @@ export function Motoristas() {
             </thead>
             <tbody>
               {motoristas.map(m => (
-                <tr key={m.id} style={{ borderBottom: '1px solid #334155' }}>
+                <tr key={m.id} style={{ borderBottom: '1px dashed #334155' }}>
                   <td style={{ padding: '14px 16px', fontWeight: 'bold', color: '#60a5fa' }}>{m.nome}</td>
                   <td style={{ padding: '14px 16px' }}>{m.cpf}</td>
                   <td style={{ padding: '14px 16px' }}>{m.telefone}</td>
@@ -187,7 +203,7 @@ export function Motoristas() {
                     <button onClick={() => handleStartEdit(m)} style={{ backgroundColor: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer' }} title="Editar">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDelete(m.id)} style={{ backgroundColor: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer' }} title="Eliminar">
+                    <button onClick={() => handleDelete(m.id)} style={{ backgroundColor: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer' }} title="Excluir">
                       <Trash2 size={18} />
                     </button>
                   </td>
